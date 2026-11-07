@@ -681,7 +681,6 @@
             font-size: 1.2rem;
         }
     </style>
-<base target="_blank">
 </head>
 <body>
     <div class="bg-pattern"></div>
@@ -995,3 +994,570 @@
                     <label>YouTube Video URL</label>
                     <input type="url" id="part-video" required>
                 </div>
+                <div class="form-group">
+                    <label>Written Guide</label>
+                    <textarea id="part-content" required style="min-height: 200px;"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Key Items & Tips</label>
+                    <textarea id="part-tips" placeholder="List important items, strategies, and tips for this section"></textarea>
+                </div>
+                <div id="add-part-message"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Add Part</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add My ROM Hack Modal -->
+    <div id="add-myromhack-modal" class="modal">
+        <div class="modal-content">
+            <button class="close-modal" onclick="closeModal('add-myromhack-modal')">&times;</button>
+            <h2 style="color: var(--accent); font-family: 'Press Start 2P', cursive; font-size: 1.3rem; margin-bottom: 2rem;">Add Your ROM Hack</h2>
+            
+            <form onsubmit="addMyRomHack(event)">
+                <div class="form-group">
+                    <label>ROM Hack Title</label>
+                    <input type="text" id="mrh-title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="mrh-description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Features (one per line)</label>
+                    <textarea id="mrh-features" placeholder="New region&#10;Custom Pokémon&#10;Enhanced difficulty"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Version</label>
+                    <input type="text" id="mrh-version" placeholder="e.g., v1.0">
+                </div>
+                <div class="form-group">
+                    <label>Patch Download URL</label>
+                    <input type="url" id="mrh-patch" required>
+                </div>
+                <div class="form-group">
+                    <label>Dev Log / Updates</label>
+                    <textarea id="mrh-devlog"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Cover Image URL (optional)</label>
+                    <input type="url" id="mrh-image">
+                </div>
+                <div id="add-myromhack-message"></div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Add ROM Hack</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Walkthrough Detail Modal -->
+    <div id="walkthrough-detail-modal" class="modal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <button class="close-modal" onclick="closeModal('walkthrough-detail-modal')">&times;</button>
+            <div id="walkthrough-detail-content"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Trainer's Odyssey. All rights reserved. Pokémon is a trademark of Nintendo, Game Freak, and The Pokémon Company.</p>
+        <div class="social-links" style="margin-top: 1.5rem;">
+            <a href="https://youtube.com/@trainersodyssey323" target="_blank">▶</a>
+            <a href="https://youtube.com/@handholdhavoc" target="_blank">🎮</a>
+            <a href="https://www.instagram.com/pokebattle_reels" target="_blank">📷</a>
+        </div>
+    </footer>
+
+    <script>
+        // Storage using localStorage with persistent data
+        const ADMIN_PASSWORD = 'pokemon2024'; // Change this to your preferred password
+        let isAdmin = false;
+
+        // Initialize storage
+        if (!localStorage.getItem('walkthroughs')) {
+            localStorage.setItem('walkthroughs', JSON.stringify([
+                {
+                    id: 1,
+                    title: 'Pokémon FireRed',
+                    type: 'official',
+                    description: 'Complete walkthrough of Pokémon FireRed with detailed guides, item locations, and strategies.',
+                    image: '',
+                    parts: []
+                },
+                {
+                    id: 2,
+                    title: 'Pokémon Ash Gray',
+                    type: 'romhack',
+                    description: 'Experience the Pokémon anime through this incredible ROM hack following Ash\'s journey.',
+                    image: '',
+                    parts: []
+                }
+            ]));
+        }
+
+        if (!localStorage.getItem('myRomHacks')) {
+            localStorage.setItem('myRomHacks', JSON.stringify([
+                {
+                    id: 1,
+                    title: 'Giovanni\'s Rise',
+                    description: 'Play as Giovanni and build Team Rocket from the ground up in this dark reimagining of the Pokémon world.',
+                    features: ['Play as the villain', 'Recruit Team Rocket members', 'Build criminal empire', 'Unique story progression'],
+                    version: 'v1.2',
+                    patchUrl: '#',
+                    devLog: 'Latest update: Added new hideout areas and enhanced battle mechanics.',
+                    image: ''
+                }
+            ]));
+        }
+
+        if (!localStorage.getItem('guides')) {
+            localStorage.setItem('guides', JSON.stringify([
+                {
+                    id: 1,
+                    title: 'Best Starter Pokémon by Generation',
+                    content: 'Comprehensive analysis of all starter Pokémon...',
+                    category: 'strategy'
+                },
+                {
+                    id: 2,
+                    title: 'How to Install ROM Hacks',
+                    content: 'Step-by-step guide to patching and playing ROM hacks...',
+                    category: 'tutorial'
+                },
+                {
+                    id: 3,
+                    title: 'Top 10 Pokémon ROM Hacks 2024',
+                    content: 'The best fan-made Pokémon games you need to play...',
+                    category: 'recommendations'
+                }
+            ]));
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            document.querySelectorAll('section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+            
+            // Load section content
+            if (sectionId === 'walkthroughs') loadWalkthroughs();
+            if (sectionId === 'myromhacks') loadMyRomHacks();
+            if (sectionId === 'guides') loadGuides();
+            if (sectionId === 'home') loadHome();
+            if (sectionId === 'pokedex') loadPokedex();
+            if (sectionId === 'romhacks') loadRomHacksHub();
+            if (sectionId === 'videos') loadVideos();
+        }
+
+        // Modal functions
+        function showAdminLogin() {
+            document.getElementById('admin-login-modal').classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function adminLogin(event) {
+            event.preventDefault();
+            const password = document.getElementById('admin-password').value;
+            const messageDiv = document.getElementById('login-message');
+            
+            if (password === ADMIN_PASSWORD) {
+                isAdmin = true;
+                messageDiv.innerHTML = '<div class="success-msg">Login successful! Admin features enabled.</div>';
+                setTimeout(() => {
+                    closeModal('admin-login-modal');
+                    showAdminPanels();
+                }, 1000);
+            } else {
+                messageDiv.innerHTML = '<div class="error-msg">Incorrect password!</div>';
+            }
+        }
+
+        function showAdminPanels() {
+            document.getElementById('admin-walkthrough-panel').style.display = 'block';
+            document.getElementById('admin-myromhacks-panel').style.display = 'block';
+        }
+
+        function showAddWalkthroughModal() {
+            document.getElementById('add-walkthrough-modal').classList.add('active');
+        }
+
+        function showAddMyRomHackModal() {
+            document.getElementById('add-myromhack-modal').classList.add('active');
+        }
+
+        function addWalkthrough(event) {
+            event.preventDefault();
+            if (!isAdmin) return;
+
+            const walkthroughs = JSON.parse(localStorage.getItem('walkthroughs'));
+            const newWalkthrough = {
+                id: Date.now(),
+                title: document.getElementById('wt-title').value,
+                type: document.getElementById('wt-type').value,
+                description: document.getElementById('wt-description').value,
+                image: document.getElementById('wt-image').value,
+                parts: []
+            };
+
+            walkthroughs.push(newWalkthrough);
+            localStorage.setItem('walkthroughs', JSON.stringify(walkthroughs));
+
+            document.getElementById('add-walkthrough-message').innerHTML = '<div class="success-msg">Walkthrough added successfully!</div>';
+            setTimeout(() => {
+                closeModal('add-walkthrough-modal');
+                loadWalkthroughs();
+                event.target.reset();
+            }, 1000);
+        }
+
+        function showAddPartModal(gameId) {
+            document.getElementById('part-game-id').value = gameId;
+            document.getElementById('add-part-modal').classList.add('active');
+        }
+
+        function addWalkthroughPart(event) {
+            event.preventDefault();
+            if (!isAdmin) return;
+
+            const gameId = parseInt(document.getElementById('part-game-id').value);
+            const walkthroughs = JSON.parse(localStorage.getItem('walkthroughs'));
+            const game = walkthroughs.find(w => w.id === gameId);
+
+            if (game) {
+                const newPart = {
+                    id: Date.now(),
+                    title: document.getElementById('part-title').value,
+                    videoUrl: document.getElementById('part-video').value,
+                    content: document.getElementById('part-content').value,
+                    tips: document.getElementById('part-tips').value
+                };
+
+                game.parts.push(newPart);
+                localStorage.setItem('walkthroughs', JSON.stringify(walkthroughs));
+
+                document.getElementById('add-part-message').innerHTML = '<div class="success-msg">Part added successfully!</div>';
+                setTimeout(() => {
+                    closeModal('add-part-modal');
+                    event.target.reset();
+                }, 1000);
+            }
+        }
+
+        function addMyRomHack(event) {
+            event.preventDefault();
+            if (!isAdmin) return;
+
+            const romHacks = JSON.parse(localStorage.getItem('myRomHacks'));
+            const newRomHack = {
+                id: Date.now(),
+                title: document.getElementById('mrh-title').value,
+                description: document.getElementById('mrh-description').value,
+                features: document.getElementById('mrh-features').value.split('\n').filter(f => f.trim()),
+                version: document.getElementById('mrh-version').value,
+                patchUrl: document.getElementById('mrh-patch').value,
+                devLog: document.getElementById('mrh-devlog').value,
+                image: document.getElementById('mrh-image').value
+            };
+
+            romHacks.push(newRomHack);
+            localStorage.setItem('myRomHacks', JSON.stringify(romHacks));
+
+            document.getElementById('add-myromhack-message').innerHTML = '<div class="success-msg">ROM Hack added successfully!</div>';
+            setTimeout(() => {
+                closeModal('add-myromhack-modal');
+                loadMyRomHacks();
+                event.target.reset();
+            }, 1000);
+        }
+
+        // Load functions
+        function loadWalkthroughs() {
+            const walkthroughs = JSON.parse(localStorage.getItem('walkthroughs'));
+            const grid = document.getElementById('walkthroughs-grid');
+            
+            grid.innerHTML = walkthroughs.map(wt => `
+                <div class="card walkthrough-card" data-type="${wt.type}">
+                    ${wt.image ? `<img src="${wt.image}" alt="${wt.title}" style="width: 100%; border-radius: 10px; margin-bottom: 1rem;">` : ''}
+                    <h3>${wt.title}</h3>
+                    <span class="card-tag">${wt.type === 'official' ? 'Official Game' : 'ROM Hack'}</span>
+                    <p>${wt.description}</p>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn" onclick="viewWalkthrough(${wt.id})">View Walkthrough</button>
+                        ${isAdmin ? `<button class="btn btn-primary" onclick="showAddPartModal(${wt.id})">+ Add Part</button>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function viewWalkthrough(id) {
+            const walkthroughs = JSON.parse(localStorage.getItem('walkthroughs'));
+            const wt = walkthroughs.find(w => w.id === id);
+            
+            if (!wt) return;
+
+            const partsHtml = wt.parts.map(part => {
+                const videoId = extractYouTubeId(part.videoUrl);
+                return `
+                    <div class="walkthrough-part" style="cursor: default; margin-bottom: 2rem;">
+                        <h3 style="color: var(--accent); margin-bottom: 1rem;">${part.title}</h3>
+                        ${videoId ? `
+                            <div class="video-container">
+                                <iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>
+                            </div>
+                        ` : ''}
+                        <div style="margin-top: 1.5rem; color: rgba(245, 245, 245, 0.9); line-height: 1.8;">
+                            ${part.content.replace(/\n/g, '<br>')}
+                        </div>
+                        ${part.tips ? `
+                            <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(255, 222, 0, 0.1); border-left: 3px solid var(--accent); border-radius: 5px;">
+                                <strong style="color: var(--accent);">💡 Key Tips & Items:</strong><br>
+                                ${part.tips.replace(/\n/g, '<br>')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+
+            const content = `
+                <div class="game-header">
+                    <h2>${wt.title}</h2>
+                    <p style="margin-top: 1rem; font-size: 1.1rem;">${wt.description}</p>
+                </div>
+                ${wt.parts.length > 0 ? partsHtml : '<p style="text-align: center; color: rgba(245, 245, 245, 0.6);">No walkthrough parts added yet.</p>'}
+            `;
+
+            document.getElementById('walkthrough-detail-content').innerHTML = content;
+            document.getElementById('walkthrough-detail-modal').classList.add('active');
+        }
+
+        function extractYouTubeId(url) {
+            const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+            const match = url.match(regExp);
+            return (match && match[7].length === 11) ? match[7] : null;
+        }
+
+        function loadMyRomHacks() {
+            const romHacks = JSON.parse(localStorage.getItem('myRomHacks'));
+            const grid = document.getElementById('myromhacks-grid');
+            
+            grid.innerHTML = romHacks.map(rh => `
+                <div class="card">
+                    ${rh.image ? `<img src="${rh.image}" alt="${rh.title}" style="width: 100%; border-radius: 10px; margin-bottom: 1rem;">` : ''}
+                    <h3>${rh.title}</h3>
+                    <span class="card-tag">${rh.version}</span>
+                    <p>${rh.description}</p>
+                    ${rh.features.length > 0 ? `
+                        <div style="margin-top: 1rem;">
+                            <strong style="color: var(--accent);">Features:</strong>
+                            <ul style="margin-top: 0.5rem; padding-left: 1.5rem; color: rgba(245, 245, 245, 0.8);">
+                                ${rh.features.map(f => `<li>${f}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    ${rh.devLog ? `
+                        <div style="margin-top: 1rem; padding: 1rem; background: rgba(59, 76, 202, 0.1); border-radius: 8px;">
+                            <strong style="color: var(--secondary);">📝 Dev Log:</strong><br>
+                            <span style="color: rgba(245, 245, 245, 0.8);">${rh.devLog}</span>
+                        </div>
+                    ` : ''}
+                    <div style="margin-top: 1.5rem;">
+                        <a href="${rh.patchUrl}" class="btn btn-primary" download>⬇ Download Patch</a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadGuides() {
+            const guides = JSON.parse(localStorage.getItem('guides'));
+            const grid = document.getElementById('guides-grid');
+            
+            grid.innerHTML = guides.map(guide => `
+                <div class="card">
+                    <h3>${guide.title}</h3>
+                    <span class="card-tag">${guide.category}</span>
+                    <p>${guide.content.substring(0, 150)}...</p>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn">Read More</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadHome() {
+            const walkthroughs = JSON.parse(localStorage.getItem('walkthroughs'));
+            const guides = JSON.parse(localStorage.getItem('guides'));
+            const grid = document.getElementById('latest-content');
+            
+            const latest = [
+                ...walkthroughs.slice(-2).map(wt => ({...wt, type: 'walkthrough'})),
+                ...guides.slice(-2).map(g => ({...g, type: 'guide'}))
+            ];
+
+            grid.innerHTML = latest.map(item => `
+                <div class="card">
+                    <h3>${item.title}</h3>
+                    <span class="card-tag">${item.type === 'walkthrough' ? 'Walkthrough' : 'Guide'}</span>
+                    <p>${item.description || item.content?.substring(0, 100) + '...'}</p>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn" onclick="showSection('${item.type === 'walkthrough' ? 'walkthroughs' : 'guides'}')">View ${item.type === 'walkthrough' ? 'Walkthrough' : 'Guide'}</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadPokedex() {
+            const grid = document.getElementById('pokedex-grid');
+            const samplePokemon = [
+                { num: 1, name: 'Bulbasaur', type: ['grass'], gen: 'gen1' },
+                { num: 4, name: 'Charmander', type: ['fire'], gen: 'gen1' },
+                { num: 7, name: 'Squirtle', type: ['water'], gen: 'gen1' },
+                { num: 25, name: 'Pikachu', type: ['electric'], gen: 'gen1' },
+                { num: 152, name: 'Chikorita', type: ['grass'], gen: 'gen2' },
+                { num: 155, name: 'Cyndaquil', type: ['fire'], gen: 'gen2' }
+            ];
+
+            grid.innerHTML = samplePokemon.map(p => `
+                <div class="card" data-gen="${p.gen}">
+                    <h3>#${String(p.num).padStart(3, '0')} ${p.name}</h3>
+                    <div style="margin: 1rem 0;">
+                        ${p.type.map(t => `<span class="type-badge type-${t}">${t}</span>`).join(' ')}
+                    </div>
+                    <p>Click to view complete stats, moves, locations, and evolution details.</p>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn">View Details</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadRomHacksHub() {
+            const grid = document.getElementById('romhacks-grid');
+            const sampleRomHacks = [
+                { title: 'Pokémon Gaia', region: 'hoenn', difficulty: 'easy', description: 'A quality ROM hack with new region Orbtus' },
+                { title: 'Pokémon Unbound', region: 'hoenn', difficulty: 'hard', description: 'Professional-grade hack with modern features' },
+                { title: 'Pokémon Radical Red', region: 'kanto', difficulty: 'hard', description: 'Enhanced FireRed with competitive difficulty' }
+            ];
+
+            grid.innerHTML = sampleRomHacks.map(rh => `
+                <div class="card" data-region="${rh.region}" data-difficulty="${rh.difficulty}">
+                    <h3>${rh.title}</h3>
+                    <span class="card-tag">${rh.difficulty}</span>
+                    <p>${rh.description}</p>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn">View Details</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadVideos() {
+            const grid = document.getElementById('playlists-grid');
+            const playlists = [
+                { title: 'Pokémon Ash Gray Complete Series', channel: 'Trainer\'s Odyssey' },
+                { title: 'Pokémon FireRed Nuzlocke', channel: 'Trainer\'s Odyssey' },
+                { title: 'Naruto Ultimate Ninja Impact', channel: 'Handhold Havoc' },
+                { title: 'God of War PSP Collection', channel: 'Handhold Havoc' }
+            ];
+
+            grid.innerHTML = playlists.map(pl => `
+                <div class="card">
+                    <h3>${pl.title}</h3>
+                    <span class="card-tag">${pl.channel}</span>
+                    <div style="margin-top: 1.5rem;">
+                        <button class="btn">Watch Playlist</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Filter functions
+        function filterWalkthroughs(type) {
+            const cards = document.querySelectorAll('.walkthrough-card');
+            const buttons = document.querySelectorAll('.filters .filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            cards.forEach(card => {
+                if (type === 'all' || card.dataset.type === type) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterPokedex(gen) {
+            const cards = document.querySelectorAll('#pokedex-grid .card');
+            const buttons = document.querySelectorAll('#pokedex .filters .filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            cards.forEach(card => {
+                if (gen === 'all' || card.dataset.gen === gen) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function filterRomHacks(filter) {
+            const cards = document.querySelectorAll('#romhacks-grid .card');
+            const buttons = document.querySelectorAll('#romhacks .filters .filter-btn');
+            
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            cards.forEach(card => {
+                if (filter === 'all' || 
+                    card.dataset.region === filter || 
+                    card.dataset.difficulty === filter.replace('difficulty-', '')) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        // Search functionality
+        document.getElementById('walkthrough-search')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.walkthrough-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        document.getElementById('pokedex-search')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('#pokedex-grid .card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Initialize
+        showSection('home');
+    </script>
+</body>
+</html>
